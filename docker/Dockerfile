@@ -1,12 +1,12 @@
 ARG ubuntu_release=focal
-FROM ubuntu:${ubuntu_release} as base
+FROM ubuntu:${ubuntu_release} AS base
 
 ARG ubuntu_release=flocal
 ARG ubuntu_release_no=20.04
 ARG postgresql_major=15
 ARG postgresql_release=${postgresql_major}.1
 
-FROM base as pg-source
+FROM base AS pg-source
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -73,6 +73,6 @@ RUN echo "deb [ trusted=yes ] file:///tmp/build ./" > /etc/apt/sources.list.d/te
 
 ENV PATH $PATH:/usr/lib/postgresql/${postgresql_major}/bin
 
-FROM scratch as pg-deb
+FROM scratch AS pg-deb
 
 COPY --from=pg-source /tmp/build /tmp

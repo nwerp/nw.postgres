@@ -42,7 +42,7 @@ ARG wal_g_release=2.0.1
 ####################
 # Setup Postgres PPA
 ####################
-FROM ubuntu:focal as ppa
+FROM ubuntu:focal AS ppa
 # Redeclare args for use in subsequent stages
 ARG postgresql_major
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -60,7 +60,7 @@ RUN apt-key add /tmp/postgresql.gpg.key && \
 ####################
 # Download pre-built postgres
 ####################
-FROM ppa as pg
+FROM ppa AS pg
 ARG postgresql_release
 # Download .deb packages
 RUN apt-get update && apt-get install -y --no-install-recommends --download-only \
@@ -68,7 +68,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends --download-only
     && rm -rf /var/lib/apt/lists/*
 RUN mv /var/cache/apt/archives/*.deb /tmp/
 
-FROM ppa as pg-dev
+FROM ppa AS pg-dev
 ARG postgresql_release
 # Download .deb packages
 RUN apt-get update && apt-get install -y --no-install-recommends --download-only \
@@ -79,7 +79,7 @@ RUN mv /var/cache/apt/archives/*.deb /tmp/
 ####################
 # Install postgres
 ####################
-FROM ubuntu:focal as base
+FROM ubuntu:focal AS base
 # Redeclare args for use in subsequent stages
 ARG TARGETARCH
 ARG postgresql_major
@@ -106,7 +106,7 @@ ENV LANG=en_US.UTF-8
 ENV LC_CTYPE=C.UTF-8
 ENV LC_COLLATE=C.UTF-8
 
-FROM base as builder
+FROM base AS builder
 # Install build dependencies
 COPY --from=pg-dev /tmp /tmp
 RUN apt-get update && \
@@ -118,7 +118,7 @@ RUN apt-get update && \
     cmake \
     && rm -rf /var/lib/apt/lists/* /tmp/*
 
-FROM builder as ccache
+FROM builder AS ccache
 # Cache large build artifacts
 RUN apt-get update && apt-get install -y --no-install-recommends \
     clang \
@@ -132,7 +132,7 @@ ARG CACHE_EPOCH
 ####################
 # 01-postgis.yml
 ####################
-FROM ccache as sfcgal
+FROM ccache AS sfcgal
 # Download and extract
 ARG sfcgal_release
 ARG sfcgal_release_checksum
@@ -156,7 +156,7 @@ RUN --mount=type=cache,target=/ccache,from=public.ecr.aws/supabase/postgres:ccac
 # Create debian package
 RUN checkinstall -D --install=yes --fstrans=no --backup=no --pakdir=/tmp --pkgname=sfcgal --pkgversion=${sfcgal_release} --requires=libgmpxx4ldbl,libboost-serialization1.71.0,libmpfr6 --nodoc
 
-FROM sfcgal as postgis-source
+FROM sfcgal AS postgis-source
 # Download and extract
 ARG postgis_release
 ARG postgis_release_checksum
@@ -183,7 +183,7 @@ RUN --mount=type=cache,target=/ccache,from=public.ecr.aws/supabase/postgres:ccac
 # Create debian package
 RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --requires=libgeos-c1v5,libproj15,libjson-c4,libprotobuf-c1,libgdal26 --nodoc
 
-FROM ppa as postgis
+FROM ppa AS postgis
 # Latest available is 3.3.2
 ARG postgis_release
 # Download pre-built packages
@@ -195,7 +195,7 @@ RUN mv /var/cache/apt/archives/*.deb /tmp/
 ####################
 # 02-pgrouting.yml
 ####################
-FROM ccache as pgrouting-source
+FROM ccache AS pgrouting-source
 # Download and extract
 ARG pgrouting_release
 ARG pgrouting_release_checksum
@@ -216,7 +216,7 @@ RUN --mount=type=cache,target=/ccache,from=public.ecr.aws/supabase/postgres:ccac
 # Create debian package
 RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --pkgname=pgrouting --pkgversion=${pgrouting_release} --nodoc
 
-FROM ppa as pgrouting
+FROM ppa AS pgrouting
 ARG pgrouting_release
 # Download pre-built packages
 RUN apt-get update && apt-get install -y --no-install-recommends --download-only \
@@ -227,7 +227,7 @@ RUN mv /var/cache/apt/archives/*.deb /tmp/
 ####################
 # 03-pgtap.yml
 ####################
-FROM builder as pgtap-source
+FROM builder AS pgtap-source
 # Download and extract
 ARG pgtap_release
 ARG pgtap_release_checksum
@@ -245,7 +245,7 @@ RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --nodoc
 ####################
 # 04-pg_cron.yml
 ####################
-FROM ccache as pg_cron-source
+FROM ccache AS pg_cron-source
 # Download and extract
 ARG pg_cron_release
 ARG pg_cron_release_checksum
@@ -264,7 +264,7 @@ RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --nodoc
 ####################
 # 05-pgaudit.yml
 ####################
-FROM ccache as pgaudit-source
+FROM ccache AS pgaudit-source
 # Download and extract
 ARG pgaudit_release
 ARG pgaudit_release_checksum
@@ -289,7 +289,7 @@ RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --nodoc
 ####################
 # 06-pgjwt.yml
 ####################
-FROM builder as pgjwt-source
+FROM builder AS pgjwt-source
 # Download and extract
 ARG pgjwt_release
 ADD "https://github.com/michelp/pgjwt.git#${pgjwt_release}" \
@@ -303,7 +303,7 @@ RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --pkgver
 ####################
 # 07-pgsql-http.yml
 ####################
-FROM ccache as pgsql-http-source
+FROM ccache AS pgsql-http-source
 # Download and extract
 ARG pgsql_http_release
 ARG pgsql_http_release_checksum
@@ -326,7 +326,7 @@ RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --requir
 ####################
 # 08-plpgsql_check.yml
 ####################
-FROM ccache as plpgsql_check-source
+FROM ccache AS plpgsql_check-source
 # Download and extract
 ARG plpgsql_check_release
 ARG plpgsql_check_release_checksum
@@ -349,7 +349,7 @@ RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --nodoc
 ####################
 # 09-pg-safeupdate.yml
 ####################
-FROM ccache as pg-safeupdate-source
+FROM ccache AS pg-safeupdate-source
 # Download and extract
 ARG pg_safeupdate_release
 ARG pg_safeupdate_release_checksum
@@ -368,7 +368,7 @@ RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --nodoc
 ####################
 # 10-timescaledb.yml
 ####################
-FROM ccache as timescaledb-source
+FROM ccache AS timescaledb-source
 # Download and extract
 ARG timescaledb_release
 ARG timescaledb_release_checksum
@@ -388,7 +388,7 @@ RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --pkgnam
 ####################
 # 11-wal2json.yml
 ####################
-FROM ccache as wal2json-source
+FROM ccache AS wal2json-source
 # Download and extract
 ARG wal2json_release
 ARG wal2json_release_checksum
@@ -408,7 +408,7 @@ RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --pkgver
 ####################
 # 12-pljava.yml
 ####################
-FROM builder as pljava-source
+FROM builder AS pljava-source
 # Download and extract
 # TODO: revert to using main repo after PG15 support is merged: https://github.com/tada/pljava/pull/413
 ARG pljava_release=master
@@ -431,7 +431,7 @@ RUN mvn -T 1C clean install -Dmaven.test.skip -DskipTests -Dmaven.javadoc.skip=t
 # Create debian package
 RUN cp pljava-packaging/target/pljava-pg${postgresql_major}.jar /tmp/
 
-FROM base as pljava
+FROM base AS pljava
 # Download pre-built packages
 RUN apt-get update && apt-get install -y --no-install-recommends --download-only \
     default-jdk-headless \
@@ -442,7 +442,7 @@ RUN mv /var/cache/apt/archives/*.deb /tmp/
 ####################
 # 13-plv8.yml
 ####################
-FROM ccache as plv8-source
+FROM ccache AS plv8-source
 # Download and extract
 ARG plv8_release
 ARG plv8_release_checksum
@@ -468,15 +468,15 @@ RUN --mount=type=cache,target=/ccache,from=public.ecr.aws/supabase/postgres:ccac
 # Create debian package
 RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --nodoc
 
-FROM scratch as plv8-deb
+FROM scratch AS plv8-deb
 COPY --from=plv8-source /tmp/*.deb /tmp/
 
-FROM ghcr.io/supabase/plv8:${plv8_release}-pg${postgresql_major} as plv8
+FROM ghcr.io/supabase/plv8:${plv8_release}-pg${postgresql_major} AS plv8
 
 ####################
 # 14-pg_plan_filter.yml
 ####################
-FROM ccache as pg_plan_filter-source
+FROM ccache AS pg_plan_filter-source
 # Download and extract
 ARG pg_plan_filter_release
 ADD "https://github.com/pgexperts/pg_plan_filter.git#${pg_plan_filter_release}" \
@@ -491,7 +491,7 @@ RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --pkgver
 ####################
 # 15-pg_net.yml
 ####################
-FROM ccache as pg_net-source
+FROM ccache AS pg_net-source
 # Download and extract
 ARG pg_net_release
 ARG pg_net_release_checksum
@@ -514,7 +514,7 @@ RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --requir
 ####################
 # 16-rum.yml
 ####################
-FROM ccache as rum-source
+FROM ccache AS rum-source
 # Download and extract
 ARG rum_release
 ARG rum_release_checksum
@@ -538,7 +538,7 @@ RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --nodoc
 ####################
 # 17-pg_hashids.yml
 ####################
-FROM ccache as pg_hashids-source
+FROM ccache AS pg_hashids-source
 # Download and extract
 ARG pg_hashids_release
 ADD "https://github.com/iCyberon/pg_hashids.git#${pg_hashids_release}" \
@@ -552,7 +552,7 @@ RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --pkgver
 ####################
 # 18-pgsodium.yml
 ####################
-FROM ccache as libsodium
+FROM ccache AS libsodium
 # Download and extract
 ARG libsodium_release
 ARG libsodium_release_checksum
@@ -568,7 +568,7 @@ RUN --mount=type=cache,target=/ccache,from=public.ecr.aws/supabase/postgres:ccac
     make -j$(nproc)
 RUN make install
 
-FROM libsodium as pgsodium-source
+FROM libsodium AS pgsodium-source
 # Download and extract
 ARG pgsodium_release
 ARG pgsodium_release_checksum
@@ -587,7 +587,7 @@ RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --requir
 ####################
 # 19-pg_graphql.yml
 ####################
-FROM base as pg_graphql
+FROM base AS pg_graphql
 # Download package archive
 ARG pg_graphql_release
 ADD "https://github.com/supabase/pg_graphql/releases/download/v${pg_graphql_release}/pg_graphql-v${pg_graphql_release}-pg${postgresql_major}-${TARGETARCH}-linux-gnu.deb" \
@@ -596,7 +596,7 @@ ADD "https://github.com/supabase/pg_graphql/releases/download/v${pg_graphql_rele
 ####################
 # 20-pg_stat_monitor.yml
 ####################
-FROM ccache as pg_stat_monitor-source
+FROM ccache AS pg_stat_monitor-source
 # Download and extract
 ARG pg_stat_monitor_release
 ARG pg_stat_monitor_release_checksum
@@ -616,7 +616,7 @@ RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --nodoc
 ####################
 # 22-pg_jsonschema.yml
 ####################
-FROM base as pg_jsonschema
+FROM base AS pg_jsonschema
 # Download package archive
 ARG pg_jsonschema_release
 ADD "https://github.com/supabase/pg_jsonschema/releases/download/v${pg_jsonschema_release}/pg_jsonschema-v${pg_jsonschema_release}-pg${postgresql_major}-${TARGETARCH}-linux-gnu.deb" \
@@ -625,7 +625,7 @@ ADD "https://github.com/supabase/pg_jsonschema/releases/download/v${pg_jsonschem
 ####################
 # 23-vault.yml
 ####################
-FROM builder as vault-source
+FROM builder AS vault-source
 # Download and extract
 ARG vault_release
 ARG vault_release_checksum
@@ -643,7 +643,7 @@ RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --nodoc
 ####################
 # 24-pgroonga.yml
 ####################
-FROM ccache as groonga
+FROM ccache AS groonga
 # Download and extract
 ARG groonga_release
 ARG groonga_release_checksum
@@ -672,7 +672,7 @@ RUN --mount=type=cache,target=/ccache,from=public.ecr.aws/supabase/postgres:ccac
 # Create debian package
 RUN checkinstall -D --install=yes --fstrans=no --backup=no --pakdir=/tmp --requires=zlib1g,liblz4-1,libzstd1,libmsgpackc2,libzmq5,libevent-2.1-7,libmecab2 --nodoc
 
-FROM groonga as pgroonga-source
+FROM groonga AS pgroonga-source
 # Download and extract
 ARG pgroonga_release
 ARG pgroonga_release_checksum
@@ -688,10 +688,10 @@ RUN --mount=type=cache,target=/ccache,from=public.ecr.aws/supabase/postgres:ccac
 # Create debian package
 RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --requires=mecab-naist-jdic --nodoc
 
-FROM scratch as pgroonga-deb
+FROM scratch AS pgroonga-deb
 COPY --from=pgroonga-source /tmp/*.deb /tmp/
 
-FROM base as pgroonga
+FROM base AS pgroonga
 # Latest available is 3.0.3
 ARG pgroonga_release
 # Download pre-built packages
@@ -709,7 +709,7 @@ RUN mv /var/cache/apt/archives/*.deb /tmp/
 ####################
 # 25-wrappers.yml
 ####################
-FROM base as wrappers
+FROM base AS wrappers
 # Download package archive
 ARG wrappers_release
 ADD "https://github.com/supabase/wrappers/releases/download/v${wrappers_release}/wrappers-v${wrappers_release}-pg${postgresql_major}-${TARGETARCH}-linux-gnu.deb" \
@@ -718,7 +718,7 @@ ADD "https://github.com/supabase/wrappers/releases/download/v${wrappers_release}
 ####################
 # 26-hypopg.yml
 ####################
-FROM ccache as hypopg-source
+FROM ccache AS hypopg-source
 # Download and extract
 ARG hypopg_release
 ARG hypopg_release_checksum
@@ -737,7 +737,7 @@ RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --nodoc
 ####################
  # 27-pg_repack.yml
  ####################
- FROM ccache as pg_repack-source
+ FROM ccache AS pg_repack-source
  ARG pg_repack_release
  ARG pg_repack_release_checksum
  ADD --checksum=${pg_repack_release_checksum} \
@@ -763,7 +763,7 @@ RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --nodoc
 ####################
 # 28-pgvector.yml
 ####################
-FROM ccache as pgvector-source
+FROM ccache AS pgvector-source
 ARG pgvector_release
 ARG pgvector_release_checksum
 ADD --checksum=${pgvector_release_checksum} \
@@ -781,7 +781,7 @@ RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --nodoc
 ####################
 # 29-pg_tle.yml
 ####################
-FROM ccache as pg_tle-source
+FROM ccache AS pg_tle-source
 ARG pg_tle_release
 ARG pg_tle_release_checksum
 ADD --checksum=${pg_tle_release_checksum} \
@@ -803,7 +803,7 @@ RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --nodoc
 ######################
 # 30-index_advisor.yml
 ######################
-FROM ccache as index_advisor
+FROM ccache AS index_advisor
 ARG index_advisor_release
 ARG index_advisor_release_checksum
 ADD --checksum=${index_advisor_release_checksum} \
@@ -821,7 +821,7 @@ RUN checkinstall -D --install=no --fstrans=no --backup=no --pakdir=/tmp --nodoc
 ####################
 # internal/supautils.yml
 ####################
-FROM base as supautils
+FROM base AS supautils
 # Download package archive
 ARG supautils_release
 # Define checksums for different architectures
@@ -855,7 +855,7 @@ RUN /tmp/download_supautils.sh && rm /tmp/download_supautils.sh
 ####################
 # setup-wal-g.yml
 ####################
-FROM base as walg
+FROM base AS walg
 ARG wal_g_release
 # ADD "https://github.com/wal-g/wal-g/releases/download/v${wal_g_release}/wal-g-pg-ubuntu-20.04-${TARGETARCH}.tar.gz" /tmp/wal-g.tar.gz
 RUN arch=$([ "$TARGETARCH" = "arm64" ] && echo "aarch64" || echo "$TARGETARCH") && \
@@ -868,7 +868,7 @@ RUN arch=$([ "$TARGETARCH" = "arm64" ] && echo "aarch64" || echo "$TARGETARCH") 
 ####################
 # Collect extension packages
 ####################
-FROM scratch as extensions
+FROM scratch AS extensions
 COPY --from=postgis-source /tmp/*.deb /tmp/
 COPY --from=pgrouting-source /tmp/*.deb /tmp/
 COPY --from=pgtap-source /tmp/*.deb /tmp/
@@ -903,7 +903,7 @@ COPY --from=supautils /tmp/*.deb /tmp/
 ####################
 # Download gosu for easy step-down from root
 ####################
-FROM ubuntu:focal as gosu
+FROM ubuntu:focal AS gosu
 ARG TARGETARCH
 # Install dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -926,7 +926,7 @@ RUN gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys $GOSU_GPG_KEY &&
 ####################
 # Build final image
 ####################
-FROM base as production
+FROM base AS production
 
 # Setup extensions
 COPY --from=extensions /tmp /tmp
@@ -986,7 +986,7 @@ CMD ["postgres", "-D", "/etc/postgresql"]
 ####################
 # Update build cache
 ####################
-FROM ccache as stats
+FROM ccache AS stats
 COPY --from=extensions /tmp/*.deb /dev/null
 # Additional packages that are separately built from source
 # COPY --from=plv8-deb /tmp/*.deb /dev/null
@@ -994,5 +994,5 @@ COPY --from=extensions /tmp/*.deb /dev/null
 RUN --mount=type=cache,target=/ccache,from=public.ecr.aws/supabase/postgres:ccache \
     ccache -s && \
     cp -r /ccache/* /tmp
-FROM scratch as buildcache
+FROM scratch AS buildcache
 COPY --from=stats /tmp /
